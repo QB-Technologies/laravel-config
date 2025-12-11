@@ -1,0 +1,16 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 9
+    paths:
+        - app
+        - domain
+        - routes
+        - database
+        - config
+    ignoreErrors: []
+
+rules:
+    - Spatie\Ray\PHPStan\RemainingRayCallRule
+

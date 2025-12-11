@@ -1,0 +1,31 @@
+<?php
+
+use Rector\Config\RectorConfig;
+use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
+use Rector\Naming\Rector\ClassMethod\RenameParamToMatchTypeRector;
+
+// Load the base configuration from the package
+$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-tool-configs/config/rector.php';
+
+// Configure paths and any project-specific skips
+return $baseConfig
+    ->withPaths([
+        __DIR__ . '/app',
+        __DIR__ . '/bootstrap',
+        __DIR__ . '/config',
+        __DIR__ . '/domain',
+        __DIR__ . '/routes',
+        __DIR__ . '/tests',
+    ])
+    ->withSkip([
+        // Add files or directories to skip specific Rector rules
+        RenamePropertyToMatchTypeRector::class => [
+            // Example:
+            // __DIR__ . '/domain/Some/DTOs/SomeDTO.php',
+        ],
+        RenameParamToMatchTypeRector::class => [
+            // Example:
+            // __DIR__ . '/domain/Some/Actions/SomeAction.php',
+        ],
+    ]);
+

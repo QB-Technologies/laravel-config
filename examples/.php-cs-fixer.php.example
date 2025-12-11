@@ -1,0 +1,21 @@
+<?php
+
+use PhpCsFixer\Finder;
+
+// Load the base configuration from the package
+$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-tool-configs/config/.php-cs-fixer.php';
+
+// Configure finder for your project's directories
+$finder = Finder::create()
+    ->in(__DIR__ . '/app')
+    ->in(__DIR__ . '/domain')
+    ->in(__DIR__ . '/routes')
+    ->in(__DIR__ . '/config')
+    ->in(__DIR__ . '/tests')
+    ->exclude('bootstrap')
+    ->exclude('storage')
+    ->exclude('vendor');
+
+// Return the base config with your custom finder
+return $baseConfig->setFinder($finder);
+

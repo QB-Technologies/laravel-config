@@ -1,0 +1,20 @@
+includes:
+    - ./vendor/quboticlabs/php-tool-configs/config/.phpstan.neon
+
+parameters:
+    level: 9  # Adjust level as needed (0-9)
+    paths:
+        - app
+        - domain
+        - routes
+        - database
+        - config
+    ignoreErrors: []
+    # Add project-specific ignore errors here if needed
+    # Example:
+    # - '#Call to an undefined method.*#'
+    # - '#Access to an undefined property.*#'
+
+rules:
+    - Spatie\Ray\PHPStan\RemainingRayCallRule
+

@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "quboticlabs/php-tool-configs",
+    "name": "quboticlabs/php-cs-fixer",
     "type": "library",
     "description": "Shared PHP tool configurations (PHP-CS-Fixer, PHPStan, Rector) for company projects",
     "keywords": [

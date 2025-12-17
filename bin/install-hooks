@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Quboticlabs\PhpToolConfigs\InstallHooks;
+
+try {
+    InstallHooks::install();
+} catch (\Exception $e) {
+    echo "❌ Error: " . $e->getMessage() . "\n";
+    exit(1);
+}
+

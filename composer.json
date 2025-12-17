@@ -24,6 +24,12 @@
             "Quboticlabs\\PhpToolConfigs\\": "src/"
         }
     },
+    "bin": [
+        "bin/install-hooks"
+    ],
+    "scripts": {
+        "install-hooks": "Quboticlabs\\PhpToolConfigs\\InstallHooks::install"
+    },
     "extra": {
         "configs": {
             "php-cs-fixer": "config/.php-cs-fixer.php",

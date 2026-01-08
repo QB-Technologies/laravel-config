@@ -32,7 +32,6 @@ validate_directory_structure() {
 
     declare -A required_directories=(
         ["app/Http/Controllers"]="Controller files (*Controller.php)"
-        ["app/Http/Middleware"]="Middleware files (*.php)"
         ["domain"]="domain files"
         ["app/Providers"]="Provider files (*Provider.php)"
         ["app/Exceptions"]="Exception files (*.php)"

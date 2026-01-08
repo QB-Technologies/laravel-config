@@ -76,7 +76,6 @@ check_unnecessary_files() {
         ".vscode/"
         "*.tmp"
         "*.temp"
-        "*.cache"
         "npm-debug.log"
         "yarn-debug.log"
         "yarn-error.log"

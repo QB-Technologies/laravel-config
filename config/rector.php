@@ -13,7 +13,7 @@ use Rector\Config\RectorConfig;
  * use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
  * use Rector\Naming\Rector\ClassMethod\RenameParamToMatchTypeRector;
  * 
- * $baseConfig = require __DIR__ . '/vendor/quboticlabs/php-cs-fixer/config/rector.php';
+ * $baseConfig = require __DIR__ . '/vendor/qb-technologies/laravel-config/config/rector.php';
  * 
  * return $baseConfig
  *     ->withPaths([

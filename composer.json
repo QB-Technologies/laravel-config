@@ -1,16 +1,25 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "quboticlabs/php-cs-fixer",
+    "name": "qb-technologies/laravel-config",
     "type": "library",
-    "description": "Shared PHP tool configurations (PHP-CS-Fixer, PHPStan, Rector) for company projects",
+    "description": "🎯 Standardized PHP code quality configurations for PHP-CS-Fixer, PHPStan, and Rector. Share consistent coding standards across all your projects.",
     "keywords": [
         "php-cs-fixer",
         "phpstan",
         "rector",
         "code-quality",
-        "coding-standards"
+        "coding-standards",
+        "laravel",
+        "php",
+        "static-analysis",
+        "code-formatting"
     ],
-    "license": "proprietary",
+    "license": "MIT",
+    "homepage": "https://github.com/QB-Technologies/laravel-config",
+    "support": {
+        "issues": "https://github.com/QB-Technologies/laravel-config/issues",
+        "source": "https://github.com/QB-Technologies/laravel-config"
+    },
     "require": {
         "php": "^8.3"
     },
@@ -21,14 +30,14 @@
     },
     "autoload": {
         "psr-4": {
-            "Quboticlabs\\PhpToolConfigs\\": "src/"
+            "QBTechnologies\\LaravelConfig\\": "src/"
         }
     },
     "bin": [
         "bin/install-hooks"
     ],
     "scripts": {
-        "install-hooks": "Quboticlabs\\PhpToolConfigs\\InstallHooks::install"
+        "install-hooks": "QBTechnologies\\LaravelConfig\\InstallHooks::install"
     },
     "extra": {
         "configs": {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Quboticlabs\PhpToolConfigs;
+namespace QBTechnologies\LaravelConfig;
 
 class InstallHooks
 {

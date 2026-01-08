@@ -3,7 +3,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Quboticlabs\PhpToolConfigs\InstallHooks;
+use QBTechnologies\LaravelConfig\InstallHooks;
 
 try {
     InstallHooks::install();

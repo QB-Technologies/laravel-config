@@ -34,7 +34,6 @@ validate_directory_structure() {
         ["app/Http/Controllers"]="Controller files (*Controller.php)"
         ["domain"]="domain files"
         ["app/Providers"]="Provider files (*Provider.php)"
-        ["app/Exceptions"]="Exception files (*.php)"
         ["database/migrations"]="Migration files"
         ["database/seeders"]="Seeder files (*Seeder.php)"
         ["database/factories"]="Factory files (*Factory.php)"

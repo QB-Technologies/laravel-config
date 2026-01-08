@@ -1,74 +1,49 @@
 # PHP Tool Configs
 
-Shared PHP tool configurations (PHP-CS-Fixer, PHPStan, Rector) for company projects.
+> 🎯 **Standardized PHP code quality configurations** for PHP-CS-Fixer, PHPStan, and Rector. Share consistent coding standards across all your projects with a single Composer package.
 
-This package provides standardized configuration files that can be shared across all company projects, ensuring consistent code quality and formatting standards.
+This package provides battle-tested, production-ready configuration files that can be shared across all your PHP projects, ensuring consistent code quality, formatting standards, and static analysis rules. Stop duplicating configuration files—maintain them in one place and reuse everywhere.
 
-## Installation
+## ✨ Features
 
-### Step 1: Add Repository to composer.json
+- 🔧 **Pre-configured PHP-CS-Fixer** rules for consistent code formatting
+- 🔍 **PHPStan** configuration with sensible defaults for static analysis
+- ⚡ **Rector** setup for automated code refactoring and modernization
+- 🪝 **Git hooks** included (pre-commit & pre-push) to enforce standards
+- 📦 **Easy installation** via Composer
+- 🎨 **Fully extensible**—override or extend any configuration
+- 🔄 **Semantic versioning** for predictable updates
 
-Add the Bitbucket repository to your project's `composer.json`:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "git@bitbucket.org:quboticlabs/php-cs-fixer.git"
-        }
-    ],
-    "require-dev": {
-        "quboticlabs/php-cs-fixer": "^1.0"
-    }
-}
-```
-
-**Note:** This uses SSH authentication. Ensure you have SSH keys configured with Bitbucket. Alternatively, you can use HTTPS with API token authentication:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://bitbucket.org/quboticlabs/php-cs-fixer.git"
-        }
-    ],
-    "config": {
-        "http-basic": {
-            "bitbucket.org": {
-                "username": "x-bitbucket-api-token-auth",
-                "password": "YOUR_API_TOKEN"
-            }
-        }
-    },
-    "require-dev": {
-        "quboticlabs/php-cs-fixer": "^1.0"
-    }
-}
-```
-
-To create a Bitbucket API token:
-1. Go to Bitbucket → Personal Settings → Security → API tokens
-2. Click **Create API token with scopes**
-3. Name it (e.g., "Composer Package Access")
-4. Select **Repositories → Read** permission
-5. Click **Create** and copy the token
-
-### Step 2: Install the Package
+## 🚀 Quick Start
 
 ```bash
-composer require --dev quboticlabs/php-cs-fixer
+composer require --dev qb-technologies/laravel-config
 ```
 
-### Step 3: Install Git Hooks (Optional but Recommended)
+That's it! Then extend the base configurations in your project as needed.
+
+## 📦 Installation
+
+### Step 1: Install the Package
+
+```bash
+composer require --dev qb-technologies/laravel-config
+```
+
+### Step 2: Install Git Hooks (Optional but Recommended)
 
 Install the pre-commit and pre-push hooks:
 
 ```bash
-cp vendor/quboticlabs/php-cs-fixer/hooks/pre-commit .git/hooks/pre-commit
-cp vendor/quboticlabs/php-cs-fixer/hooks/pre-push .git/hooks/pre-push
+cp vendor/qb-technologies/laravel-config/hooks/pre-commit .git/hooks/pre-commit
+cp vendor/qb-technologies/laravel-config/hooks/pre-push .git/hooks/pre-push
 chmod +x .git/hooks/pre-commit .git/hooks/pre-push
+```
+
+Or use the included installer:
+
+```bash
+php vendor/bin/install-hooks
 ```
 
 ## Usage
@@ -82,7 +57,7 @@ Create a `.php-cs-fixer.php` file in your project root:
 
 use PhpCsFixer\Finder;
 
-$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-cs-fixer/config/.php-cs-fixer.php';
+$baseConfig = require __DIR__ . '/vendor/qb-technologies/laravel-config/config/.php-cs-fixer.php';
 
 $finder = Finder::create()
     ->in(__DIR__ . '/app')
@@ -103,7 +78,7 @@ Create a `.phpstan.neon` file in your project root:
 
 ```neon
 includes:
-    - ./vendor/quboticlabs/php-cs-fixer/config/.phpstan.neon
+    - ./vendor/qb-technologies/laravel-config/config/.phpstan.neon
 
 parameters:
     level: 9  # Adjust level as needed for your project
@@ -124,7 +99,7 @@ Or, if you want to use the base config directly and only override specific param
 
 ```neon
 includes:
-    - ./vendor/quboticlabs/php-cs-fixer/config/.phpstan.neon
+    - ./vendor/qb-technologies/laravel-config/config/.phpstan.neon
 
 parameters:
     paths:
@@ -144,7 +119,7 @@ use Rector\Config\RectorConfig;
 use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
 use Rector\Naming\Rector\ClassMethod\RenameParamToMatchTypeRector;
 
-$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-cs-fixer/config/rector.php';
+$baseConfig = require __DIR__ . '/vendor/qb-technologies/laravel-config/config/rector.php';
 
 return $baseConfig
     ->withPaths([
@@ -178,7 +153,7 @@ When you need to update the shared configurations:
    git push origin v1.0.1
    ```
 4. Update the version constraint in your project's `composer.json` if needed
-5. Run `composer update quboticlabs/php-cs-fixer` in your projects
+5. Run `composer update qb-technologies/laravel-config` in your projects
 
 ## Versioning
 
@@ -205,4 +180,4 @@ When proposing changes to the shared configurations:
 
 ## License
 
-Proprietary - Internal use only
+MIT License - see [LICENSE](LICENSE) file for details.

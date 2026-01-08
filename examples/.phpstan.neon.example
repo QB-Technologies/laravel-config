@@ -1,5 +1,5 @@
 includes:
-    - ./vendor/quboticlabs/php-tool-configs/config/.phpstan.neon
+    - ./vendor/qb-technologies/laravel-config/config/.phpstan.neon
 
 parameters:
     level: 9  # Adjust level as needed (0-9)

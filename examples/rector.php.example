@@ -5,7 +5,7 @@ use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
 use Rector\Naming\Rector\ClassMethod\RenameParamToMatchTypeRector;
 
 // Load the base configuration from the package
-$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-cs-fixer/config/rector.php';
+$baseConfig = require __DIR__ . '/vendor/qb-technologies/laravel-config/config/rector.php';
 
 // Configure paths and any project-specific skips
 return $baseConfig

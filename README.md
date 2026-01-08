@@ -6,66 +6,69 @@ This package provides standardized configuration files that can be shared across
 
 ## Installation
 
-### 1. Set up Bitbucket Package Repository
+### Step 1: Add Repository to composer.json
 
-First, you need to configure Composer to use Bitbucket as a private package repository.
-
-#### Option A: Using Bitbucket Packages (Recommended)
-
-1. Go to your Bitbucket repository settings
-2. Navigate to **Packages** section
-3. Copy the repository URL (format: `https://api.bitbucket.org/2.0/repositories/{workspace}/{repo_slug}/packages`)
-
-#### Option B: Using Satis (Self-hosted)
-
-If you prefer to use Satis for hosting packages:
-
-1. Set up a Satis instance
-2. Configure it to pull from your Bitbucket repositories
-3. Use the Satis URL as your repository URL
-
-### 2. Configure Composer in Your Projects
-
-Add the repository configuration to your project's `composer.json`:
+Add the Bitbucket repository to your project's `composer.json`:
 
 ```json
 {
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://bitbucket.org/your-workspace/php-cs-fixer.git"
+            "url": "git@bitbucket.org:quboticlabs/php-cs-fixer.git"
         }
     ],
     "require-dev": {
-        "quboticlabs/php-tool-configs": "^1.0"
+        "quboticlabs/php-cs-fixer": "^1.0"
     }
 }
 ```
 
-**Note:** For Bitbucket, you may need to set up authentication. Add this to your `composer.json`:
+**Note:** This uses SSH authentication. Ensure you have SSH keys configured with Bitbucket. Alternatively, you can use HTTPS with API token authentication:
 
 ```json
 {
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://bitbucket.org/quboticlabs/php-cs-fixer.git"
+        }
+    ],
     "config": {
         "http-basic": {
             "bitbucket.org": {
-                "username": "your-bitbucket-username",
-                "password": "your-app-password"
+                "username": "x-bitbucket-api-token-auth",
+                "password": "YOUR_API_TOKEN"
             }
         }
+    },
+    "require-dev": {
+        "quboticlabs/php-cs-fixer": "^1.0"
     }
 }
 ```
 
-To create an app password in Bitbucket:
-1. Go to Personal Settings → App Passwords
-2. Create a new app password with read permissions
-3. Use this password in the composer.json config
+To create a Bitbucket API token:
+1. Go to Bitbucket → Personal Settings → Security → API tokens
+2. Click **Create API token with scopes**
+3. Name it (e.g., "Composer Package Access")
+4. Select **Repositories → Read** permission
+5. Click **Create** and copy the token
 
-### 3. Install the Package
+### Step 2: Install the Package
 
 ```bash
-composer require --dev quboticlabs/php-tool-configs
+composer require --dev quboticlabs/php-cs-fixer
+```
+
+### Step 3: Install Git Hooks (Optional but Recommended)
+
+Install the pre-commit and pre-push hooks:
+
+```bash
+cp vendor/quboticlabs/php-cs-fixer/hooks/pre-commit .git/hooks/pre-commit
+cp vendor/quboticlabs/php-cs-fixer/hooks/pre-push .git/hooks/pre-push
+chmod +x .git/hooks/pre-commit .git/hooks/pre-push
 ```
 
 ## Usage
@@ -79,7 +82,7 @@ Create a `.php-cs-fixer.php` file in your project root:
 
 use PhpCsFixer\Finder;
 
-$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-tool-configs/config/.php-cs-fixer.php';
+$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-cs-fixer/config/.php-cs-fixer.php';
 
 $finder = Finder::create()
     ->in(__DIR__ . '/app')
@@ -100,7 +103,7 @@ Create a `.phpstan.neon` file in your project root:
 
 ```neon
 includes:
-    - ./vendor/quboticlabs/php-tool-configs/config/.phpstan.neon
+    - ./vendor/quboticlabs/php-cs-fixer/config/.phpstan.neon
 
 parameters:
     level: 9  # Adjust level as needed for your project
@@ -121,7 +124,7 @@ Or, if you want to use the base config directly and only override specific param
 
 ```neon
 includes:
-    - ./vendor/quboticlabs/php-tool-configs/config/.phpstan.neon
+    - ./vendor/quboticlabs/php-cs-fixer/config/.phpstan.neon
 
 parameters:
     paths:
@@ -141,7 +144,7 @@ use Rector\Config\RectorConfig;
 use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
 use Rector\Naming\Rector\ClassMethod\RenameParamToMatchTypeRector;
 
-$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-tool-configs/config/rector.php';
+$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-cs-fixer/config/rector.php';
 
 return $baseConfig
     ->withPaths([
@@ -175,7 +178,7 @@ When you need to update the shared configurations:
    git push origin v1.0.1
    ```
 4. Update the version constraint in your project's `composer.json` if needed
-5. Run `composer update quboticlabs/php-tool-configs` in your projects
+5. Run `composer update quboticlabs/php-cs-fixer` in your projects
 
 ## Versioning
 

@@ -3,7 +3,7 @@
 use PhpCsFixer\Finder;
 
 // Load the base configuration from the package
-$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-tool-configs/config/.php-cs-fixer.php';
+$baseConfig = require __DIR__ . '/vendor/quboticlabs/php-cs-fixer/config/.php-cs-fixer.php';
 
 // Configure finder for your project's directories
 $finder = Finder::create()

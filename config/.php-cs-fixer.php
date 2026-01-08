@@ -1,6 +1,6 @@
 <?php
 
-use PhpCsFixer\{Config, Finder};
+use PhpCsFixer\Config;
 
 /**
  * Base PHP-CS-Fixer configuration
@@ -8,9 +8,12 @@ use PhpCsFixer\{Config, Finder};
  * To use in your project, create a .php-cs-fixer.php file in your project root:
  * 
  * <?php
- * $baseConfig = require __DIR__ . '/vendor/quboticlabs/php-tool-configs/config/.php-cs-fixer.php';
  * 
- * $finder = $baseConfig->getFinder()
+ * use PhpCsFixer\Finder;
+ * 
+ * $baseConfig = require __DIR__ . '/vendor/quboticlabs/php-cs-fixer/config/.php-cs-fixer.php';
+ * 
+ * $finder = Finder::create()
  *     ->in(__DIR__ . '/app')
  *     ->in(__DIR__ . '/domain')
  *     ->exclude('bootstrap')
@@ -18,8 +21,6 @@ use PhpCsFixer\{Config, Finder};
  * 
  * return $baseConfig->setFinder($finder);
  */
-
-$finder = Finder::create();
 
 return (new Config())
     ->setRules([
@@ -79,7 +80,6 @@ return (new Config())
         'phpdoc_single_line_var_spacing' => true,
         'type_declaration_spaces'        => true,
     ])
-    ->setFinder($finder)
     ->setIndent('    ')
     ->setLineEnding("\n");
 

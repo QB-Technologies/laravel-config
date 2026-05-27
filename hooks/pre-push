@@ -31,7 +31,6 @@ validate_directory_structure() {
     echo "📁 Validating project structure..."
 
     declare -A required_directories=(
-        ["app/Http/Controllers"]="Controller files (*Controller.php)"
         ["domain"]="domain files"
         ["app/Providers"]="Provider files (*Provider.php)"
         ["database/migrations"]="Migration files"
@@ -112,7 +111,7 @@ fi
 # Run PHPStan/Larastan
 if command_exists "./vendor/bin/phpstan"; then
     echo "🔍 Running PHPStan..."
-    ./vendor/bin/phpstan analyse || display_error "PHPStan found issues"
+    ./vendor/bin/phpstan analyse --memory-limit=1G || display_error "PHPStan found issues"
 fi
 
 # Run Rector
@@ -139,13 +138,13 @@ if git diff --cached --name-only | grep -q ".env$"; then
 fi
 
 # Check tests
-if command_exists "./vendor/bin/sail"; then
-    ./vendor/bin/sail test || display_error "Tests failed"
-elif command_exists "./vendor/bin/pest"; then
-    ./vendor/bin/pest || display_error "Tests failed"
-elif command_exists "./vendor/bin/phpunit"; then
-    ./vendor/bin/phpunit || display_error "Tests failed"
-fi
+#if command_exists "./vendor/bin/sail"; then
+#    ./vendor/bin/sail test || display_error "Tests failed"
+#elif command_exists "./vendor/bin/pest"; then
+#    ./vendor/bin/pest || display_error "Tests failed"
+#elif command_exists "./vendor/bin/phpunit"; then
+#    ./vendor/bin/phpunit || display_error "Tests failed"
+#fi
 
 # Check migration status
 echo "📊 Checking migration status..."

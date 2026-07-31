@@ -120,6 +120,12 @@ if command_exists "./vendor/bin/rector"; then
     ./vendor/bin/rector --dry-run || display_error "Rector found issues"
 fi
 
+# Run PHPCPD (copy-paste detection)
+if command_exists "./vendor/bin/phpcpd"; then
+    echo "📋 Running PHPCPD..."
+    ./vendor/bin/phpcpd --min-lines 10 --min-tokens 70 --suffix .php domain/ || display_error "PHPCPD found duplicated code"
+fi
+
 # Run ESLint for JavaScript
 if [ ! -z "$STAGED_JS_FILES" ] && command_exists "eslint"; then
     echo "🔍 Running ESLint..."

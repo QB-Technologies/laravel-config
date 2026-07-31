@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-30
+
+### Added
+- PHPCPD (copy-paste detection) as a `require` dependency so it is provided to consuming apps
+- PHPCPD check to the pre-push hook (`--min-lines 10 --min-tokens 70 --suffix .php domain/`)
+
+### Changed
+- `InstallHooks` now fails soft (warns and skips) when no `.git/hooks` directory is present, making it safe to run from a consumer's `post-update-cmd`
+
 ## [1.0.3] - 2026-05-27
 - Added memory limit to PHPStan analyse
 - Commented out testing in pre push hook as we don't want this yet

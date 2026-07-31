@@ -1,13 +1,15 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "qb-technologies/laravel-config",
-    "version": "1.0.3",
+    "version": "1.1.0",
     "type": "library",
-    "description": "🎯 Standardized PHP code quality configurations for PHP-CS-Fixer, PHPStan, and Rector. Share consistent coding standards across all your projects.",
+    "description": "🎯 Standardized PHP code quality configurations for PHP-CS-Fixer, PHPStan, Rector, and PHPCPD. Share consistent coding standards across all your projects.",
     "keywords": [
         "php-cs-fixer",
         "phpstan",
         "rector",
+        "phpcpd",
+        "copy-paste-detection",
         "code-quality",
         "coding-standards",
         "laravel",
@@ -22,7 +24,8 @@
         "source": "https://github.com/QB-Technologies/laravel-config"
     },
     "require": {
-        "php": "^8.3"
+        "php": "^8.3",
+        "systemsdk/phpcpd": "^8.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.75",

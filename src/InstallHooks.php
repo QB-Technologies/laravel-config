@@ -20,7 +20,12 @@ class InstallHooks
         $gitHooksDir = $projectRoot . '/.git/hooks';
 
         if (!is_dir($gitHooksDir)) {
-            throw new \RuntimeException("Not a git repository. Please run 'git init' first.");
+            // Fail soft: CI/Docker builds and non-worktree checkouts often have no
+            // .git/hooks directory. Skip installation rather than break the
+            // composer lifecycle when this is wired into post-update-cmd.
+            echo "⚠️  Skipping git hook installation: no .git/hooks directory found.\n";
+
+            return;
         }
 
         if (!is_dir($hooksDir)) {

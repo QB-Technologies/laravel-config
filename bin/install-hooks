@@ -1,12 +1,36 @@
 #!/usr/bin/env php
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
+/**
+ * Locate and load the Composer autoloader. This script may run via Composer's
+ * bin proxy (vendor/bin/install-hooks), directly as an installed dependency,
+ * or from a standalone checkout of this package - each has a different path.
+ */
+(static function (): void {
+    // Composer's bin proxy hands us the app's autoloader here; prefer it.
+    if (isset($GLOBALS['_composer_autoload_path'])) {
+        require $GLOBALS['_composer_autoload_path'];
 
-use QBTechnologies\LaravelConfig\InstallHooks;
+        return;
+    }
+
+    foreach ([
+        __DIR__ . '/../../../autoload.php', // installed as a dependency -> <app>/vendor/autoload.php
+        __DIR__ . '/../vendor/autoload.php', // standalone checkout of this package
+    ] as $autoload) {
+        if (file_exists($autoload)) {
+            require $autoload;
+
+            return;
+        }
+    }
+
+    fwrite(STDERR, "Could not locate the Composer autoloader. Run 'composer install' first.\n");
+    exit(1);
+})();
 
 try {
-    InstallHooks::install();
+    \QBTechnologies\LaravelConfig\InstallHooks::install();
 } catch (\Exception $e) {
     echo "❌ Error: " . $e->getMessage() . "\n";
     exit(1);

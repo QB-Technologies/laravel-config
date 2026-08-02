@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-07-31
+
+### Fixed
+- `bin/install-hooks` now locates the Composer autoloader correctly when the package is installed as a dependency. It previously hardcoded `../vendor/autoload.php`, which only exists in a standalone checkout, so `vendor/bin/install-hooks` fatally errored inside a consuming app. It now uses Composer's `$_composer_autoload_path`, falling back to the app's `vendor/autoload.php`.
+
 ## [1.1.0] - 2026-07-30
 
 ### Added

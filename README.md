@@ -50,16 +50,16 @@ composer require --dev qb-technologies/laravel-config
 Install the pre-commit and pre-push hooks:
 
 ```bash
-cp vendor/qb-technologies/laravel-config/hooks/pre-commit .git/hooks/pre-commit
-cp vendor/qb-technologies/laravel-config/hooks/pre-push .git/hooks/pre-push
-chmod +x .git/hooks/pre-commit .git/hooks/pre-push
-```
-
-Or use the included installer:
-
-```bash
 php vendor/bin/install-hooks
 ```
+
+This also runs automatically from `post-install-cmd` and `post-update-cmd` if you wire it
+up there, so a normal setup needs no manual step.
+
+The installer asks git where the hooks belong rather than assuming `.git/hooks`, so it works
+in a worktree (where `.git` is a file and hooks are shared from the main checkout) and honours
+`core.hooksPath`. It prints the directory it used. Copying the files by hand is not equivalent:
+in a worktree `.git/hooks` does not exist, and the copy goes nowhere git will look.
 
 ## Usage
 

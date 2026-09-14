@@ -1,13 +1,14 @@
 # PHP Tool Configs
 
-> 🎯 **Standardized PHP code quality configurations** for PHP-CS-Fixer, PHPStan, and Rector. Share consistent coding standards across all your projects with a single Composer package.
+> 🎯 **Standardized PHP code quality configurations** for PHP-CS-Fixer, PHPStan, Rector, and PHPCPD. Share consistent coding standards across all your projects with a single Composer package.
 
 This package provides battle-tested, production-ready configuration files that can be shared across all your PHP projects, ensuring consistent code quality, formatting standards, and static analysis rules. Stop duplicating configuration files—maintain them in one place and reuse everywhere.
 
 ## ✨ Features
 
 - 🔧 **Pre-configured PHP-CS-Fixer** rules for consistent code formatting
-- 🔍 **PHPStan** configuration with sensible defaults for static analysis
+- 🔍 **PHPStan** (via Larastan) configuration with sensible defaults for static analysis
+- 📋 **PHPCPD** copy-paste detection
 - ⚡ **Rector** setup for automated code refactoring and modernization
 - 🪝 **Git hooks** included (pre-commit & pre-push) to enforce standards
 - 📦 **Easy installation** via Composer
@@ -21,6 +22,20 @@ composer require --dev qb-technologies/laravel-config
 ```
 
 That's it! Then extend the base configurations in your project as needed.
+
+The package requires PHP-CS-Fixer, PHPStan (via Larastan), Rector, and PHPCPD, so installing it puts all four binaries in your `vendor/bin`. Don't declare them in your own `composer.json`: this package owns their versions.
+
+Apps can't override those versions locally. Composer intersects a root `composer.json` requirement with the dependency's constraint rather than letting the root win, so declaring a conflicting version in your app gives you an unsolvable set, not a local win. The only route to a different version is a release of this package.
+
+### Laravel version support
+
+This package requires Larastan, and Larastan requires `illuminate/*`. So this package has a say in which Laravel major a consuming app can resolve to. Larastan 3.x allows `^11.44.2 || ^12.4.1`.
+
+When a new Laravel major lands, this package needs a release with a widened Larastan constraint before consuming apps can upgrade. Widening to `^3.4 || ^4.0` once Larastan 4 exists is routine maintenance. It's much less pleasant to work out under upgrade pressure, so it's worth doing early.
+
+### A note for anyone changing these dependencies
+
+Consuming apps include `vendor/larastan/larastan/extension.neon` directly from their own `.phpstan.neon`. That path is effectively part of this package's contract even though the app never declares Larastan itself. Swapping Larastan for something else means updating every consumer's `.phpstan.neon` in the same release.
 
 ## 📦 Installation
 

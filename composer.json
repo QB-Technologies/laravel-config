@@ -25,12 +25,10 @@
     },
     "require": {
         "php": "^8.3",
-        "systemsdk/phpcpd": "^8.0"
-    },
-    "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.75",
-        "phpstan/phpstan": "^1.10",
-        "rector/rector": "^2.0"
+        "larastan/larastan": "^3.4",
+        "rector/rector": "^2.0",
+        "systemsdk/phpcpd": "^8.0"
     },
     "autoload": {
         "psr-4": {

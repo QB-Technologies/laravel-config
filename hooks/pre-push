@@ -30,18 +30,24 @@ command_exists() {
 validate_directory_structure() {
     echo "📁 Validating project structure..."
 
-    declare -A required_directories=(
-        ["domain"]="domain files"
-        ["app/Providers"]="Provider files (*Provider.php)"
-        ["database/migrations"]="Migration files"
-        ["database/seeders"]="Seeder files (*Seeder.php)"
-        ["database/factories"]="Factory files (*Factory.php)"
-        ["tests"]="Test files (*Test.php)"
+    # "path|what lives there", in a plain indexed array. Associative arrays need
+    # bash 4, and macOS ships 3.2, where "declare -A" errors and skips the rest of
+    # this function without tripping set -e. That made this check pass silently.
+    required_directories=(
+        "domain|domain files"
+        "app/Providers|Provider files (*Provider.php)"
+        "database/migrations|Migration files"
+        "database/seeders|Seeder files (*Seeder.php)"
+        "database/factories|Factory files (*Factory.php)"
+        "tests|Test files (*Test.php)"
     )
 
-    for dir in "${!required_directories[@]}"; do
+    for entry in "${required_directories[@]}"; do
+        dir="${entry%%|*}"
+        description="${entry#*|}"
+
         if [ ! -d "$dir" ]; then
-            display_error "Missing required directory: $dir (${required_directories[$dir]})"
+            display_error "Missing required directory: $dir ($description)"
         fi
     done
 }

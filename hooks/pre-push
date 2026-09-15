@@ -11,9 +11,25 @@ set -e
 
 echo -e "${YELLOW}Running pre-push hooks...${NC}"
 
-# Store the staged files
-STAGED_PHP_FILES=$(git diff --cached --name-only --diff-filter=d | grep ".php$" | tr '\n' ' ')
-STAGED_JS_FILES=$(git diff --cached --name-only --diff-filter=d | grep ".js$" | tr '\n' ' ')
+# The files this push would send. A pre-push hook runs after the commit, so the
+# index already matches HEAD and `git diff --cached` comes back empty: every check
+# that used it was passing without looking at anything.
+PUSH_FILES=""
+OLDEST_UNPUSHED=$(git rev-list HEAD --not --remotes 2>/dev/null | tail -1)
+
+if [ -n "$OLDEST_UNPUSHED" ]; then
+    if git rev-parse --verify --quiet "${OLDEST_UNPUSHED}^" >/dev/null 2>&1; then
+        PUSH_BASE="${OLDEST_UNPUSHED}^"
+    else
+        # Root commit, so diff against the empty tree.
+        PUSH_BASE=$(git hash-object -t tree /dev/null)
+    fi
+
+    PUSH_FILES=$(git diff --name-only --diff-filter=d "$PUSH_BASE" HEAD)
+fi
+
+PUSH_PHP_FILES=$(printf '%s\n' "$PUSH_FILES" | grep '\.php$' | tr '\n' ' ' || true)
+PUSH_JS_FILES=$(printf '%s\n' "$PUSH_FILES" | grep '\.js$' | tr '\n' ' ' || true)
 
 # Function to display error
 display_error() {
@@ -92,31 +108,20 @@ validate_file_locations() {
 check_unnecessary_files() {
     echo "🧹 Checking for unnecessary files..."
 
-    unnecessary_patterns=(
-        "*.log"
-        "*.swap"
-        "*.swo"
-        "*.swp"
-        "*~"
-        ".DS_Store"
-        "Thumbs.db"
-        ".idea/"
-        ".vscode/"
-        "*.tmp"
-        "*.temp"
-        "npm-debug.log"
-        "yarn-debug.log"
-        "yarn-error.log"
-    )
+    # Match what the push contains rather than whatever sits in the working tree.
+    # An .idea directory that git ignores is nobody's business here, and the two
+    # editor patterns never matched anything before this: find -name does not take
+    # a trailing slash.
+    local unnecessary='(^|/)(\.DS_Store|Thumbs\.db|npm-debug\.log|yarn-debug\.log|yarn-error\.log)$|(^|/)\.(idea|vscode)/|\.(log|swp|swo|swap|tmp|temp)$|~$'
+    local found_files
 
-    for pattern in "${unnecessary_patterns[@]}"; do
-        found_files=$(find . -name "$pattern" -not -path "./vendor/*" -not -path "./node_modules/*" -not -path "./storage/*" 2>/dev/null)
-        if [ ! -z "$found_files" ]; then
-            echo "Found unnecessary files:"
-            echo "$found_files"
-            display_error "Please remove unnecessary files"
-        fi
-    done
+    found_files=$(printf '%s\n' "$PUSH_FILES" | grep -E "$unnecessary" || true)
+
+    if [ -n "$found_files" ]; then
+        echo "Found unnecessary files:"
+        echo "$found_files"
+        display_error "Please remove unnecessary files"
+    fi
 }
 
 # Run base checks
@@ -126,7 +131,7 @@ fi
 
 # Run PHP syntax check
 echo "🔍 Checking PHP syntax..."
-for FILE in $STAGED_PHP_FILES; do
+for FILE in $PUSH_PHP_FILES; do
     if [ -f "$FILE" ]; then
         php -l "$FILE" >/dev/null 2>&1 || display_error "PHP syntax error in $FILE"
     fi
@@ -157,20 +162,20 @@ if command_exists "./vendor/bin/phpcpd"; then
 fi
 
 # Run ESLint for JavaScript
-if [ ! -z "$STAGED_JS_FILES" ] && command_exists "eslint"; then
+if [ ! -z "$PUSH_JS_FILES" ] && command_exists "eslint"; then
     echo "🔍 Running ESLint..."
-    ./node_modules/.bin/eslint $STAGED_JS_FILES || display_error "ESLint found issues"
+    ./node_modules/.bin/eslint $PUSH_JS_FILES || display_error "ESLint found issues"
 fi
 
 # Run Prettier for JavaScript
-if [ ! -z "$STAGED_JS_FILES" ] && command_exists "prettier"; then
+if [ ! -z "$PUSH_JS_FILES" ] && command_exists "prettier"; then
     echo "🎨 Running Prettier..."
-    ./node_modules/.bin/prettier --check $STAGED_JS_FILES || display_error "Prettier found formatting issues"
+    ./node_modules/.bin/prettier --check $PUSH_JS_FILES || display_error "Prettier found formatting issues"
 fi
 
 # Check .env file protection
-if git diff --cached --name-only | grep -q ".env$"; then
-    display_error ".env file cannot be committed"
+if printf '%s\n' "$PUSH_FILES" | grep -qE '(^|/)\.env$'; then
+    display_error ".env file cannot be pushed"
 fi
 
 # Check tests
@@ -194,14 +199,6 @@ fi
 validate_directory_structure
 validate_file_locations
 check_unnecessary_files
-
-# Add modified files back to staging
-if [ -n "$STAGED_PHP_FILES" ]; then
-    git add $STAGED_PHP_FILES
-fi
-if [ -n "$STAGED_JS_FILES" ]; then
-    git add $STAGED_JS_FILES
-fi
 
 echo -e "${GREEN}✅ All pre-push hooks passed!${NC}"
 exit 0

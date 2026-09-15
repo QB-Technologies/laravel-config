@@ -1,7 +1,11 @@
+# Larastan ships with this package now, so the extension is included here rather
+# than left to every consumer's own .phpstan.neon. The path resolves from the
+# directory phpstan runs in, which is the app root for the composer scripts and
+# for CI. A path relative to this file instead would break whenever the package
+# is symlinked in, which is how a release gets tested before it is tagged.
+includes:
+    - %currentWorkingDirectory%/vendor/larastan/larastan/extension.neon
+
 parameters:
     level: 9
     ignoreErrors: []
-
-rules:
-    - Spatie\Ray\PHPStan\RemainingRayCallRule
-

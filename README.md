@@ -35,7 +35,7 @@ When a new Laravel major lands, this package needs a release with a widened Lara
 
 ### A note for anyone changing these dependencies
 
-Consuming apps include `vendor/larastan/larastan/extension.neon` directly from their own `.phpstan.neon`. That path is effectively part of this package's contract even though the app never declares Larastan itself. Swapping Larastan for something else means updating every consumer's `.phpstan.neon` in the same release.
+The shared `config/.phpstan.neon` includes `vendor/larastan/larastan/extension.neon` itself, so consuming apps must not include it again. PHPStan treats a file included twice as a hard error, not a warning. Apps that carried that line before this release have to drop it when they upgrade. Swapping Larastan for something else is now a change here rather than in every consumer.
 
 ## 📦 Installation
 
@@ -105,7 +105,9 @@ return $baseConfig->setFinder($finder);
 
 ### PHPStan
 
-Create a `.phpstan.neon` file in your project root:
+Create a `.phpstan.neon` file in your project root. Don't add
+`vendor/larastan/larastan/extension.neon` here, the shared config already includes it and PHPStan
+fails on a file included twice.
 
 ```neon
 includes:
@@ -123,8 +125,12 @@ parameters:
     # Add project-specific ignore errors here if needed
 
 rules:
-    - Spatie\Ray\PHPStan\RemainingRayCallRule
+    - Spatie\Ray\PHPStan\RemainingRayCallRule  # needs spatie/laravel-ray in the app
 ```
+
+The Ray rule is the app's to declare. This package used to register it in the shared config
+without requiring `spatie/laravel-ray`, so any consumer without Ray installed got
+`Class 'Spatie\Ray\PHPStan\RemainingRayCallRule' not found` instead of an analysis.
 
 Or, if you want to use the base config directly and only override specific parameters:
 

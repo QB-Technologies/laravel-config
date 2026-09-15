@@ -66,6 +66,17 @@ It only writes to the repository you run it in. Run it somewhere that is not a c
 with `core.hooksPath` set in your global config, and it tells you what it skipped and why instead
 of writing hooks into a repository or a shared directory you did not mean.
 
+### What the hooks run
+
+Each check prefers the app's own composer script and falls back to calling the binary directly.
+`composer cs`, `composer phpstan`, `composer rector`, and `composer phpcpd` are the names it looks
+for. Define them and the hook runs a check exactly the way CI does, so the two cannot drift apart
+on flags. Leave them undefined and the hook keeps its own defaults, which is what every consumer
+got before.
+
+The hook disables Composer's process timeout for these calls, so a slow analysis on a large tree
+does not die at 300 seconds with a Composer exception in place of the tool's own output.
+
 ## Usage
 
 ### PHP-CS-Fixer

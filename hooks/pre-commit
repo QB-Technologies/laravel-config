@@ -22,10 +22,32 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# The app's composer scripts, so a check can run exactly the way CI runs it.
+COMPOSER_SCRIPTS=""
+if command_exists composer && [ -f "composer.json" ]; then
+    COMPOSER_SCRIPTS=$(composer run-script --list 2>/dev/null | awk '{print $1}')
+fi
+
+# Prefer the app's composer script over calling the binary here, so the hook and
+# CI cannot drift apart on flags. Falls back to the direct call for apps that
+# define no script of that name.
+run_check() {
+    local script="$1"
+    shift
+
+    if printf '%s\n' "$COMPOSER_SCRIPTS" | grep -qx -- "$script"; then
+        # Composer applies its 300 second process-timeout to scripts, and a slow
+        # analysis on a large tree runs past it.
+        COMPOSER_PROCESS_TIMEOUT=0 composer "$script"
+    else
+        "$@"
+    fi
+}
+
 # Run PHP CS Fixer
 if command_exists "./vendor/bin/php-cs-fixer"; then
     echo "🧹 Running PHP CS Fixer..."
-    ./vendor/bin/php-cs-fixer fix --dry-run --diff || display_error "PHP CS Fixer found issues"
+    run_check cs ./vendor/bin/php-cs-fixer fix --dry-run --diff || display_error "PHP CS Fixer found issues"
 fi
 
 echo -e "${GREEN}✅ All pre-commit hooks passed!${NC}"

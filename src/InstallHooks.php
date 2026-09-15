@@ -91,10 +91,17 @@ class InstallHooks
      */
     private static function resolveGitHooksDir(string $projectRoot): ?string
     {
-        $hooksDir = self::askGitForHooksDir($projectRoot) ?? self::readHooksDirFromDotGit($projectRoot);
+        $gitError = null;
+        $hooksDir = self::askGitForHooksDir($projectRoot, $gitError) ?? self::readHooksDirFromDotGit($projectRoot);
 
         if ($hooksDir === null) {
             echo "⚠️  Skipping git hook installation: no git repository found.\n";
+
+            // Without this a refusal git can explain, safe.directory being the
+            // common one, looks identical to there being no repository.
+            if ($gitError !== null) {
+                echo "   git said: {$gitError}\n";
+            }
 
             return null;
         }
@@ -127,25 +134,34 @@ class InstallHooks
         return $hooksDir;
     }
 
-    private static function askGitForHooksDir(string $projectRoot): ?string
+    private static function askGitForHooksDir(string $projectRoot, ?string &$error = null): ?string
     {
-        $path = self::askGit(['rev-parse', '--git-path', 'hooks'], $projectRoot);
+        $path = self::askGit(['rev-parse', '--git-path', 'hooks'], $projectRoot, $error);
 
         return $path === null ? null : self::toAbsolutePath($path, $projectRoot);
     }
 
     /**
      * @param array<int, string> $arguments
+     * @param string|null $error Git's own complaint, when it has one
      */
-    private static function askGit(array $arguments, string $cwd): ?string
+    private static function askGit(array $arguments, string $cwd, ?string &$error = null): ?string
     {
+        $error = null;
+
         if (!function_exists('proc_open')) {
             return null;
         }
 
         $process = @proc_open(
             array_merge(['git'], $arguments),
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            [
+                // Without a stdin of its own git inherits ours, and a credential
+                // helper could sit there waiting on input nobody is going to type.
+                0 => ['file', PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ],
             $pipes,
             $cwd
         );
@@ -155,11 +171,13 @@ class InstallHooks
         }
 
         $output = stream_get_contents($pipes[1]);
-        stream_get_contents($pipes[2]);
+        $stderr = stream_get_contents($pipes[2]);
         fclose($pipes[1]);
         fclose($pipes[2]);
 
         if (proc_close($process) !== 0 || !is_string($output)) {
+            $error = is_string($stderr) && trim($stderr) !== '' ? trim($stderr) : null;
+
             return null;
         }
 
@@ -237,17 +255,17 @@ class InstallHooks
             }
         }
 
-        // commondir is relative, so the joined path carries a ../.. through it.
-        $resolved = realpath($gitDir);
-
-        return ($resolved === false ? $gitDir : $resolved) . '/hooks';
+        return $gitDir . '/hooks';
     }
 
     private static function toAbsolutePath(string $path, string $base): string
     {
         $isAbsolute = str_starts_with($path, '/') || preg_match('#^[A-Za-z]:[\\\\/]#', $path) === 1;
+        $joined = $isAbsolute ? $path : rtrim($base, '/\\') . '/' . $path;
 
-        return $isAbsolute ? $path : rtrim($base, '/\\') . '/' . $path;
+        // The gitdir: line and commondir are both relative, so the joined path
+        // carries a ../.. through it and that ends up in the messages below.
+        return realpath($joined) ?: $joined;
     }
 
     /**

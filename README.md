@@ -54,7 +54,16 @@ php vendor/bin/install-hooks
 ```
 
 This also runs automatically from `post-install-cmd` and `post-update-cmd` if you wire it
-up there, so a normal setup needs no manual step.
+up there, so a normal setup needs no manual step. Call the class rather than `include`-ing the
+bin file: PHP only strips a shebang from the script it runs directly, so an include prints a
+stray `#!/usr/bin/env php` on every install. The `file_exists` guard keeps a `--no-dev` install
+quiet.
+
+```json
+"post-install-cmd": [
+    "@php -r \"if (file_exists('vendor/autoload.php') && file_exists('vendor/bin/install-hooks')) { require 'vendor/autoload.php'; QBTechnologies\\\\LaravelConfig\\\\InstallHooks::install(); }\""
+]
+```
 
 The installer asks git where the hooks belong rather than assuming `.git/hooks`, so it works
 in a worktree (where `.git` is a file and hooks are shared from the main checkout) and honours a

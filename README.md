@@ -29,9 +29,9 @@ Apps can't override those versions locally. Composer intersects a root `composer
 
 ### Laravel version support
 
-This package requires Larastan, and Larastan requires `illuminate/*`. So this package has a say in which Laravel major a consuming app can resolve to. Larastan 3.x allows `^11.44.2 || ^12.4.1`.
+This package requires Larastan, and Larastan requires `illuminate/*`. So this package has a say in which Laravel major a consuming app can resolve to. The current ceiling is whatever the installed Larastan allows, which is the `illuminate/*` constraint in `vendor/larastan/larastan/composer.json`. Larastan widens it over time within 3.x, so reading it there beats a number written down here.
 
-When a new Laravel major lands, this package needs a release with a widened Larastan constraint before consuming apps can upgrade. Widening to `^3.4 || ^4.0` once Larastan 4 exists is routine maintenance. It's much less pleasant to work out under upgrade pressure, so it's worth doing early.
+When a new Laravel major lands and Larastan needs a new major to support it, this package needs a release with a widened constraint before consuming apps can upgrade. Widening to `^3.4 || ^4.0` once Larastan 4 exists is routine maintenance. It's much less pleasant to work out under upgrade pressure, so it's worth doing early.
 
 ### A note for anyone changing these dependencies
 

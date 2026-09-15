@@ -92,7 +92,17 @@ class InstallHooks
     private static function resolveGitHooksDir(string $projectRoot): ?string
     {
         $gitError = null;
-        $hooksDir = self::askGitForHooksDir($projectRoot, $gitError) ?? self::readHooksDirFromDotGit($projectRoot);
+        $hooksDir = self::askGitForHooksDir($projectRoot, $gitError);
+
+        if ($hooksDir !== null) {
+            return self::hooksDirOwnedByProject($hooksDir, $projectRoot);
+        }
+
+        // The hand-parsed reader only follows this project's own .git, so it cannot
+        // wander into an enclosing repository and it never reads core.hooksPath.
+        // The bounds below would have nothing to check it against anyway, since
+        // they ask git, and git is what just failed.
+        $hooksDir = self::readHooksDirFromDotGit($projectRoot);
 
         if ($hooksDir === null) {
             echo "⚠️  Skipping git hook installation: no git repository found.\n";
@@ -106,6 +116,16 @@ class InstallHooks
             return null;
         }
 
+        return $hooksDir;
+    }
+
+    /**
+     * Keep git's answer inside the repository this project lives in.
+     *
+     * @return string|null Absolute path, or null when the hooks belong elsewhere
+     */
+    private static function hooksDirOwnedByProject(string $hooksDir, string $projectRoot): ?string
+    {
         // git rev-parse answers for whichever repository it finds walking up, so a
         // project that isn't itself a checkout resolves an enclosing one's hooks.
         $topLevel = self::askGit(['rev-parse', '--show-toplevel'], $projectRoot);

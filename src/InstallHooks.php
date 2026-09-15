@@ -26,7 +26,10 @@ class InstallHooks
             return;
         }
 
-        if (!is_dir($gitHooksDir) && !mkdir($gitHooksDir, 0755, true) && !is_dir($gitHooksDir)) {
+        // @-suppressed: the friendly message below says the same thing as the raw
+        // PHP warning, and a read-only or wrong-uid target is a normal situation
+        // here rather than a programming error.
+        if (!is_dir($gitHooksDir) && !@mkdir($gitHooksDir, 0755, true) && !is_dir($gitHooksDir)) {
             echo "⚠️  Skipping git hook installation: could not create {$gitHooksDir}\n";
 
             return;
@@ -37,6 +40,7 @@ class InstallHooks
         }
 
         $hooks = ['pre-commit', 'pre-push'];
+        $installed = 0;
 
         foreach ($hooks as $hook) {
             $sourceHook = $hooksDir . '/' . $hook;
@@ -47,15 +51,28 @@ class InstallHooks
                 continue;
             }
 
-            // Copy the hook file
-            if (!copy($sourceHook, $targetHook)) {
-                throw new \RuntimeException("Failed to copy hook: {$hook}");
+            // Every failure from here on warns and carries on. This runs from
+            // post-update-cmd, and the Dockerfiles run a bare composer install, so
+            // throwing would turn an unwritable hooks directory into a failed image
+            // build.
+            if (!@copy($sourceHook, $targetHook)) {
+                echo "⚠️  Could not install {$hook} into {$gitHooksDir}, skipping.\n";
+                continue;
             }
 
-            // Make it executable
-            chmod($targetHook, 0755);
+            if (!@chmod($targetHook, 0755)) {
+                echo "⚠️  Installed {$hook} but could not make it executable; git will ignore it.\n";
+            }
+
+            $installed++;
 
             echo "✅ Installed hook: {$hook}\n";
+        }
+
+        if ($installed !== count($hooks)) {
+            echo "\n⚠️  Installed {$installed} of " . count($hooks) . " git hooks in {$gitHooksDir}\n";
+
+            return;
         }
 
         echo "\n🎉 Git hooks installed successfully in {$gitHooksDir}\n";

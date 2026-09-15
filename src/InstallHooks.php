@@ -19,12 +19,10 @@ class InstallHooks
         $hooksDir = $packageRoot . '/hooks';
         $gitHooksDir = self::resolveGitHooksDir($projectRoot);
 
+        // Fail soft: CI/Docker builds often have no repository at all, and the
+        // resolver refuses to write outside this project. Skip installation rather
+        // than break the composer lifecycle when this is wired into post-update-cmd.
         if ($gitHooksDir === null) {
-            // Fail soft: CI/Docker builds often have no repository at all. Skip
-            // installation rather than break the composer lifecycle when this is
-            // wired into post-update-cmd.
-            echo "⚠️  Skipping git hook installation: no git repository found.\n";
-
             return;
         }
 
@@ -76,20 +74,63 @@ class InstallHooks
      */
     private static function resolveGitHooksDir(string $projectRoot): ?string
     {
-        return self::askGitForHooksDir($projectRoot) ?? self::readHooksDirFromDotGit($projectRoot);
+        $hooksDir = self::askGitForHooksDir($projectRoot) ?? self::readHooksDirFromDotGit($projectRoot);
+
+        if ($hooksDir === null) {
+            echo "⚠️  Skipping git hook installation: no git repository found.\n";
+
+            return null;
+        }
+
+        // git rev-parse answers for whichever repository it finds walking up, so a
+        // project that isn't itself a checkout resolves an enclosing one's hooks.
+        $topLevel = self::askGit(['rev-parse', '--show-toplevel'], $projectRoot);
+
+        if ($topLevel !== null && self::normalisePath($topLevel) !== self::normalisePath($projectRoot)) {
+            echo "⚠️  Skipping git hook installation: {$projectRoot} is not a repository root.\n";
+
+            return null;
+        }
+
+        if (self::isInside($hooksDir, self::gitCommonDir($projectRoot))) {
+            return $hooksDir;
+        }
+
+        // core.hooksPath puts the hooks outside the repository. Honour it when this
+        // repository asked for it, but not when it comes from global config: that
+        // would hand every repository on the machine this project's hooks.
+        if (self::askGit(['config', '--local', '--get', 'core.hooksPath'], $projectRoot) === null) {
+            echo "⚠️  Skipping git hook installation: core.hooksPath points at {$hooksDir}, outside this repository.\n";
+
+            return null;
+        }
+
+        echo "ℹ️  core.hooksPath is set for this repository, installing into {$hooksDir}\n";
+
+        return $hooksDir;
     }
 
     private static function askGitForHooksDir(string $projectRoot): ?string
+    {
+        $path = self::askGit(['rev-parse', '--git-path', 'hooks'], $projectRoot);
+
+        return $path === null ? null : self::toAbsolutePath($path, $projectRoot);
+    }
+
+    /**
+     * @param array<int, string> $arguments
+     */
+    private static function askGit(array $arguments, string $cwd): ?string
     {
         if (!function_exists('proc_open')) {
             return null;
         }
 
         $process = @proc_open(
-            ['git', 'rev-parse', '--git-path', 'hooks'],
+            array_merge(['git'], $arguments),
             [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
-            $projectRoot
+            $cwd
         );
 
         if (!is_resource($process)) {
@@ -105,9 +146,46 @@ class InstallHooks
             return null;
         }
 
-        $path = trim($output);
+        $output = trim($output);
 
-        return $path === '' ? null : self::toAbsolutePath($path, $projectRoot);
+        return $output === '' ? null : $output;
+    }
+
+    private static function gitCommonDir(string $projectRoot): string
+    {
+        $commonDir = self::askGit(['rev-parse', '--git-common-dir'], $projectRoot);
+
+        return self::toAbsolutePath($commonDir ?? '.git', $projectRoot);
+    }
+
+    private static function isInside(string $path, string $directory): bool
+    {
+        $path = self::normalisePath($path);
+        $directory = self::normalisePath($directory);
+
+        return $path === $directory || str_starts_with($path, $directory . '/');
+    }
+
+    /**
+     * Resolve a path for comparison. The hooks directory may not exist yet, so
+     * fall back to resolving its parent and appending the name.
+     */
+    private static function normalisePath(string $path): string
+    {
+        $path = rtrim(str_replace('\\', '/', $path), '/');
+        $resolved = realpath($path);
+
+        if ($resolved !== false) {
+            return rtrim(str_replace('\\', '/', $resolved), '/');
+        }
+
+        $parent = realpath(dirname($path));
+
+        if ($parent !== false) {
+            return rtrim(str_replace('\\', '/', $parent), '/') . '/' . basename($path);
+        }
+
+        return $path;
     }
 
     private static function readHooksDirFromDotGit(string $projectRoot): ?string

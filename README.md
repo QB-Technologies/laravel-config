@@ -57,9 +57,14 @@ This also runs automatically from `post-install-cmd` and `post-update-cmd` if yo
 up there, so a normal setup needs no manual step.
 
 The installer asks git where the hooks belong rather than assuming `.git/hooks`, so it works
-in a worktree (where `.git` is a file and hooks are shared from the main checkout) and honours
-`core.hooksPath`. It prints the directory it used. Copying the files by hand is not equivalent:
-in a worktree `.git/hooks` does not exist, and the copy goes nowhere git will look.
+in a worktree (where `.git` is a file and hooks are shared from the main checkout) and honours a
+`core.hooksPath` the repository sets for itself. It prints the directory it used. Copying the
+files by hand is not equivalent: in a worktree `.git/hooks` does not exist, and the copy goes
+nowhere git will look.
+
+It only writes to the repository you run it in. Run it somewhere that is not a checkout root, or
+with `core.hooksPath` set in your global config, and it tells you what it skipped and why instead
+of writing hooks into a repository or a shared directory you did not mean.
 
 ## Usage
 

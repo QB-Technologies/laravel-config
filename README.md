@@ -53,17 +53,25 @@ Install the pre-commit and pre-push hooks:
 php vendor/bin/install-hooks
 ```
 
-This also runs automatically from `post-install-cmd` and `post-update-cmd` if you wire it
-up there, so a normal setup needs no manual step. Call the class rather than `include`-ing the
-bin file: PHP only strips a shebang from the script it runs directly, so an include prints a
-stray `#!/usr/bin/env php` on every install. The `file_exists` guard keeps a `--no-dev` install
-quiet.
+Wire it into both lifecycle events so a normal setup needs no manual step. Give it a name and
+reference that from each event, rather than repeating the command twice:
 
 ```json
-"post-install-cmd": [
-    "@php -r \"if (file_exists('vendor/autoload.php') && file_exists('vendor/bin/install-hooks')) { require 'vendor/autoload.php'; QBTechnologies\\\\LaravelConfig\\\\InstallHooks::install(); }\""
-]
+"scripts": {
+    "hooks:install": "@php -r \"if (file_exists('vendor/bin/install-hooks')) { include 'vendor/bin/install-hooks'; } else { echo 'Skipping git hook install (dev dependencies not installed).', PHP_EOL; }\"",
+    "post-install-cmd": ["@hooks:install"],
+    "post-update-cmd": ["@hooks:install"]
+}
 ```
+
+Keep the `file_exists` guard, so a `--no-dev` install in a Dockerfile says what it skipped instead
+of failing.
+
+An earlier version of this README told consumers to call `InstallHooks::install()` instead of
+including the bin file, on the grounds that PHP strips a shebang only from the script it runs
+directly, so an include would print a stray `#!/usr/bin/env php`. That is wrong: PHP strips the
+line on include too, measured on 8.3.32 and 8.4.18. The include is shorter and needs no escaped
+namespace separators, so it is the one shown here.
 
 The installer asks git where the hooks belong rather than assuming `.git/hooks`, so it works
 in a worktree (where `.git` is a file and hooks are shared from the main checkout) and honours a

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2026-09-15
+## [2.0.0] - 2026-09-23
 
 ### Breaking
 - Consuming apps can no longer pick their own versions of the four code-quality tools. A root `composer.json` requirement is intersected with this package's constraint rather than overriding it, so a conflicting local declaration gives an unsolvable set and the only route to a different version is a release here.
@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consuming apps must remove `vendor/larastan/larastan/extension.neon` from their own `.phpstan.neon`. The shared config includes it now, and PHPStan treats a file included twice as a hard error, so an app that keeps the line fails on the first run after upgrading.
 - The shared config no longer registers `Spatie\Ray\PHPStan\RemainingRayCallRule`. An app that wants the rule declares it itself and needs `spatie/laravel-ray` of its own.
 - The hooks run the app's composer scripts where it defines them, so a push runs the app's flags rather than this package's. An app with no `cs`, `phpstan`, `rector` or `phpcpd` script is unaffected.
+- The pre-push hook calls `php artisan` for its migration check unless the app sets `ARTISAN` in a `.hooks-env.sh` at its root. An app that relied on the hook finding `./vendor/bin/sail` by itself has to add that file, for example `ARTISAN=(./vendor/bin/sail artisan)`.
 
 ### Changed
 - All four code-quality tools now ship from `require` instead of `require-dev`, so consuming apps get them transitively and no longer declare their own copies. `friendsofphp/php-cs-fixer ^3.75` and `rector/rector ^2.0` moved across, and `phpstan/phpstan ^1.10` was replaced by `larastan/larastan ^3.4`.
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The shared `config/.phpstan.neon` no longer registers `Spatie\Ray\PHPStan\RemainingRayCallRule`, and now includes Larastan's `extension.neon` itself. The Ray rule was declared without `spatie/laravel-ray` being a dependency, so a consumer without Ray got `Service 'rules.0': Class 'Spatie\Ray\PHPStan\RemainingRayCallRule' not found` instead of an analysis, and a consumer that had Ray and declared the rule itself saw every stray `ray()` call reported twice. Declaring that rule is the app's job. Larastan is a hard dependency here as of this release, so including its extension is this package's job, and consuming apps must drop that line from their own `.phpstan.neon`: PHPStan treats a file included twice as a hard error.
 
 ### Fixed
+- The pre-push hook no longer assumes `./vendor/bin/sail`. It preferred that binary whenever it existed in `vendor`, and Sail arrives there as a transitive dependency of apps that never use it, so the migration check ran against a container that was not running and failed the push. Apps now say how they reach artisan in a `.hooks-env.sh`, which is also the one place a consumer can override hook behaviour without editing an installed hook that the next install overwrites.
 - The pre-push hook's project-structure check now runs on macOS. It built its list of required directories with `declare -A`, which needs bash 4, and macOS ships bash 3.2. There bash reads the literal as an indexed array and arithmetic-evaluates each subscript, so `app/Providers` is parsed as a division and fails with `division by 0`. An arithmetic error in a non-interactive shell abandons the command being run, which unwinds the whole function, so nothing after the declaration executed and `set -e` never fired. The check reported success without validating anything. It now uses a plain indexed array, which works on both.
 - `install-hooks` now works in a git worktree. It assumed hooks live in `<project>/.git/hooks`, but a worktree's `.git` is a file pointing at `.git/worktrees/<name>` and hooks are shared from the main checkout, so the installer found no `.git/hooks` directory and silently skipped. It now asks git where the hooks directory is, which also covers a repository-local `core.hooksPath`, and falls back to reading `.git` itself when git is not on `PATH`.
 - `install-hooks` now refuses to write outside the repository it runs in. Asking git for the hooks directory answers for whichever repository git finds walking up, so running the installer from a directory nested inside another checkout wrote this project's hooks into that one, and a `core.hooksPath` in global config sent them to the directory every repository on the machine shares. It now installs only when the project directory is the repository root, and only into that repository's own hooks directory or a `core.hooksPath` the repository sets for itself. Every other case says what it skipped and why.

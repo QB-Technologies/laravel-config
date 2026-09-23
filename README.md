@@ -86,6 +86,24 @@ got before.
 The hook disables Composer's process timeout for these calls, so a slow analysis on a large tree
 does not die at 300 seconds with a Composer exception in place of the tool's own output.
 
+### Telling the hooks how to reach artisan
+
+The pre-push hook runs `artisan migrate:status`. By default it calls `php artisan`. If your app
+runs artisan inside a container, put an `ARTISAN` array in a `.hooks-env.sh` at the project root
+and the hook sources it:
+
+```bash
+# .hooks-env.sh
+ARTISAN=(./vendor/bin/sail artisan)
+```
+
+It has to be an array, not a string, so the words survive the call. The file is optional and
+usually belongs in `.gitignore`, since the right answer differs per developer.
+
+Earlier versions used `./vendor/bin/sail` whenever it existed. That is wrong: Sail arrives in
+`vendor` as a transitive dependency of apps that never use it, and the check then failed on a
+container that was not running.
+
 ## Usage
 
 ### PHP-CS-Fixer

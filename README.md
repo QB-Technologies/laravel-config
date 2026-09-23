@@ -86,19 +86,29 @@ got before.
 The hook disables Composer's process timeout for these calls, so a slow analysis on a large tree
 does not die at 300 seconds with a Composer exception in place of the tool's own output.
 
-### Telling the hooks how to reach artisan
+### Per-developer hook settings (`.hooks-env`)
 
-The pre-push hook runs `artisan migrate:status`. By default it calls `php artisan`. If your app
-runs artisan inside a container, put an `ARTISAN` array in a `.hooks-env.sh` at the project root
-and the hook sources it:
+Copy a `.hooks-env` file to your project root (gitignore it). Both hooks source it for a single
+setting, `DEV_RUNTIME`, which matches gitscripts so the same value can drive `devcom` / `devart`
+and the git hooks.
+
+| `DEV_RUNTIME` | How hooks run composer, artisan, `php -l`, and `vendor/bin` fallbacks |
+| --- | --- |
+| unset or `native` | `composer`, `php artisan`, `php -l`, `vendor/bin/...` on the host |
+| `herd` / `valet` | `herd composer`, `herd php artisan`, and so on |
+| `sail` | `./sail` (or `vendor/bin/sail`) for composer, artisan, and tools |
+
+If `DEV_RUNTIME` is unset, invalid, or the tool is missing (for example `sail` with no sail
+script), hooks fall back to native commands and print one warning.
 
 ```bash
-# .hooks-env.sh
-ARTISAN=(./vendor/bin/sail artisan)
-```
+# .hooks-env — Sail app (TMU, etc.)
+DEV_RUNTIME=sail
 
-It has to be an array, not a string, so the words survive the call. The file is optional and
-usually belongs in `.gitignore`, since the right answer differs per developer.
+# Herd site with an isolated PHP version
+DEV_RUNTIME=herd
+```
+The file is optional and belongs in `.gitignore`, since the right answer differs per developer.
 
 Earlier versions used `./vendor/bin/sail` whenever it existed. That is wrong: Sail arrives in
 `vendor` as a transitive dependency of apps that never use it, and the check then failed on a

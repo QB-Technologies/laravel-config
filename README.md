@@ -46,6 +46,29 @@ Or use the included installer:
 php vendor/bin/install-hooks
 ```
 
+### Step 3: Install Laravel Boost in the app
+
+This package ships shared AI guidelines for [Laravel Boost](https://laravel.com/docs/boost). Boost is an application dev dependency, so install it in the app rather than in this package:
+
+```bash
+composer require laravel/boost --dev
+./vendor/bin/sail artisan boost:install
+```
+
+During install, select Cursor and include guidelines, skills, and the MCP server. Then enable the `laravel-boost` MCP server in Cursor.
+
+The shared rules live in `resources/boost/guidelines/core.blade.php`. Boost reads that file from `vendor` and writes it into the agent's always-on guideline file (`AGENTS.md` for Cursor). Re-running install is not required after a package update if `boost:update` is in the app's Composer `post-update-cmd`:
+
+```json
+"post-update-cmd": [
+    "@php artisan boost:update --ansi"
+]
+```
+
+`boost:update` only refreshes Boost resources that are already installed. Generated files (`.cursor/`, `.claude/`, `.mcp.json`, `boost.json`, `AGENTS.md`, `CLAUDE.md`) can be gitignored. Do not gitignore `.ai/rules`; those are shared project rules and should be committed.
+
+If the generated MCP command is `php artisan boost:mcp` and the app runs in Sail, point the server at `./vendor/bin/sail artisan boost:mcp`.
+
 ## Usage
 
 ### PHP-CS-Fixer

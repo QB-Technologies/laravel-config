@@ -11,6 +11,14 @@ set -e
 
 echo -e "${YELLOW}Running pre-push hooks...${NC}"
 
+# The app's own hook settings, if it keeps any. A project that runs its artisan
+# commands through a container sets ARTISAN there - see the README - and this is
+# the one place a consumer can override how the hook reaches artisan without
+# editing an installed hook that the next install overwrites.
+if [ -f .hooks-env.sh ]; then
+    . ./.hooks-env.sh
+fi
+
 # The files this push would send. A pre-push hook runs after the commit, so the
 # index already matches HEAD and `git diff --cached` comes back empty: every check
 # that used it was passing without looking at anything.
@@ -61,6 +69,19 @@ run_check() {
         COMPOSER_PROCESS_TIMEOUT=0 composer "$script"
     else
         "$@"
+    fi
+}
+
+# Run an artisan command the way this project runs it. ARTISAN comes from
+# .hooks-env.sh as an array, e.g. ARTISAN=(./vendor/bin/sail artisan). Unset, the
+# hook calls artisan directly - the previous behaviour of preferring
+# ./vendor/bin/sail whenever it existed broke every project that had sail sitting
+# in vendor as a transitive dependency without using it.
+run_artisan() {
+    if [ "${#ARTISAN[@]}" -gt 0 ]; then
+        "${ARTISAN[@]}" "$@"
+    else
+        php artisan "$@"
     fi
 }
 
@@ -189,11 +210,7 @@ fi
 
 # Check migration status
 echo "📊 Checking migration status..."
-if command_exists "./vendor/bin/sail"; then
-    ./vendor/bin/sail artisan migrate:status || display_error "Migration status check failed"
-elif command_exists "php"; then
-    php artisan migrate:status || display_error "Migration status check failed"
-fi
+run_artisan migrate:status || display_error "Migration status check failed"
 
 # Run all structural validations
 validate_directory_structure

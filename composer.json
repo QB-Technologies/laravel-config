@@ -25,6 +25,7 @@
     },
     "require": {
         "php": "^8.3",
+        "laravel/boost": "^2.9",
         "systemsdk/phpcpd": "^8.0"
     },
     "require-dev": {

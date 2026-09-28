@@ -48,10 +48,11 @@ php vendor/bin/install-hooks
 
 ### Step 3: Install Laravel Boost in the app
 
-This package ships shared AI guidelines for [Laravel Boost](https://laravel.com/docs/boost). Boost is an application dev dependency, so install it in the app rather than in this package:
+This package requires [Laravel Boost](https://laravel.com/docs/boost). An app that already has `qb-technologies/laravel-config` in `require-dev` gets Boost on `composer install` or `composer update`. Do not add `laravel/boost` to the app's own `composer.json`. `composer install --no-dev` skips this package, so Boost is not installed in production.
+
+Publish the guidelines once per machine:
 
 ```bash
-composer require laravel/boost --dev
 ./vendor/bin/sail artisan boost:install
 ```
 

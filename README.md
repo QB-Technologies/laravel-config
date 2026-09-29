@@ -46,29 +46,42 @@ Or use the included installer:
 php vendor/bin/install-hooks
 ```
 
-### Step 3: Install Laravel Boost in the app
+### Step 3: Set up Laravel Boost in the app (once per machine)
 
-This package requires [Laravel Boost](https://laravel.com/docs/boost). An app that already has `qb-technologies/laravel-config` in `require-dev` gets Boost on `composer install` or `composer update`. Do not add `laravel/boost` to the app's own `composer.json`. `composer install --no-dev` skips this package, so Boost is not installed in production.
+From 1.2.0 this package requires [Laravel Boost](https://laravel.com/docs/boost), so an app with `qb-technologies/laravel-config` in `require-dev` gets Boost on `composer install` or `composer update`. Do not add `laravel/boost` to the app's own `composer.json`. `composer install --no-dev` skips this package, so Boost is not installed in production.
 
-Publish the guidelines once per machine:
+Boost requires `illuminate/console|contracts|routing|support` at `^11.45.3|^12.41.1|^13.0`. An app on an older Laravel cannot install this release without upgrading the framework first.
+
+Run the installer **interactively**. It cannot be scripted, because the step that pulls in the shared rules is a prompt:
 
 ```bash
 ./vendor/bin/sail artisan boost:install
 ```
 
-During install, select Cursor and include guidelines, skills, and the MCP server. Then enable the `laravel-boost` MCP server in Cursor.
+Then, in order:
 
-The shared rules live in `resources/boost/guidelines/core.blade.php`. Boost reads that file from `vendor` and writes it into the agent's always-on guideline file (`AGENTS.md` for Cursor). Re-running install is not required after a package update if `boost:update` is in the app's Composer `post-update-cmd`:
+1. Pick your agent (Cursor, Claude Code, Codex).
+2. Include guidelines, and the MCP server if you want it.
+3. When Boost lists packages that ship guidelines, **select `qb-technologies/laravel-config`**. Miss this and you get no QB rules.
+4. Enable the `laravel-boost` MCP server in your agent.
+
+The shared rules live in `resources/boost/guidelines/core.blade.php`. Boost reads that file from `vendor` and writes it into the agent's always-on guideline file, which is `AGENTS.md` for every agent unless the app overrides the path.
+
+Keeping the rules current after a package bump needs `boost:update` in the app's Composer `post-update-cmd`:
 
 ```json
 "post-update-cmd": [
-    "@php artisan boost:update --ansi"
+    "@php artisan boost:update --ansi --no-interaction"
 ]
 ```
 
-`boost:update` only refreshes Boost resources that are already installed. Generated files (`.cursor/`, `.claude/`, `.mcp.json`, `boost.json`, `AGENTS.md`, `CLAUDE.md`) can be gitignored. Do not gitignore `.ai/rules`; those are shared project rules and should be committed.
+That refreshes guidelines for packages you have already selected. It does **not** add newly available ones: `boost:update` skips its discovery prompt whenever it detects a Composer run, so after a bump that introduces new guidelines you have to re-run `boost:install`, or `php artisan boost:update` from a terminal, and select the package there.
 
-If the generated MCP command is `php artisan boost:mcp` and the app runs in Sail, point the server at `./vendor/bin/sail artisan boost:mcp`.
+`boost:install --no-interaction` is not a shortcut. It writes a `boost.json` with no agents and no packages, which both omits the QB rules and makes the next `boost:update` fail with `Please set up Boost with [php artisan boost:install] first.`
+
+Generated files (`.cursor/`, `.mcp.json`, `boost.json`, `AGENTS.md`, `CLAUDE.md`) can be gitignored. Do not gitignore `.ai/rules`; those are shared project rules and should be committed.
+
+If the generated MCP command is `php artisan boost:mcp` and the app runs in Sail, point the server at `./vendor/bin/sail artisan boost:mcp`. The MCP server reads whatever database the app's `.env` points at, and exposes read-only SQL, schema and log reading, so point it at a local or testing database. The `tinker` tool, which runs arbitrary PHP, is off unless `BOOST_TINKER_TOOL_ENABLED=true`.
 
 ## Usage
 

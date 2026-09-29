@@ -27,11 +27,33 @@ The package requires PHP-CS-Fixer, PHPStan (via Larastan), Rector, and PHPCPD, s
 
 Apps can't override those versions locally. Composer intersects a root `composer.json` requirement with the dependency's constraint rather than letting the root win, so declaring a conflicting version in your app gives you an unsolvable set, not a local win. The only route to a different version is a release of this package.
 
+The four tools are pinned to exact versions, not ranges:
+
+| tool | version |
+| --- | --- |
+| `friendsofphp/php-cs-fixer` | 3.95.27 |
+| `larastan/larastan` | 3.12.2 |
+| `rector/rector` | 2.6.7 |
+| `systemsdk/phpcpd` | 8.0.0 |
+
+A range would leave each app on whatever was newest the last time it ran `composer update`, which is
+how one app came to format with PHP-CS-Fixer 3.92.4 while another used 3.95.2, against the same
+shared config. An exact pin is the only way every app formats and analyses identically. The cost is
+that a tool upgrade needs a release here; that was already true of the major constraint.
+
+PHPCPD is held at 8.0.0 deliberately. From 8.1.1 it requires `phpunit/php-timer ^8.0`, and an app
+on Pest 3 gets PHPUnit 11, which requires `php-timer ^7.0.1`. Only one version of a package can be
+installed, so a newer PHPCPD makes this package uninstallable for any app testing with Pest 3.
+Raising it means waiting for those apps to reach PHPUnit 12.
+
+PHPStan is not pinned directly. It arrives through Larastan and Rector, which both require
+`^2.2.14`, so apps can still differ by a patch there.
+
 ### Laravel version support
 
 This package requires Larastan, and Larastan requires `illuminate/*`. So this package has a say in which Laravel major a consuming app can resolve to. The current ceiling is whatever the installed Larastan allows, which is the `illuminate/*` constraint in `vendor/larastan/larastan/composer.json`. Larastan widens it over time within 3.x, so reading it there beats a number written down here.
 
-When a new Laravel major lands and Larastan needs a new major to support it, this package needs a release with a widened constraint before consuming apps can upgrade. Widening to `^3.4 || ^4.0` once Larastan 4 exists is routine maintenance. It's much less pleasant to work out under upgrade pressure, so it's worth doing early.
+When a new Laravel major lands and Larastan needs a new major to support it, this package needs a release with a widened constraint before consuming apps can upgrade. Moving the pin to a Larastan 4 release once one exists is routine maintenance. It's much less pleasant to work out under upgrade pressure, so it's worth doing early.
 
 ### A note for anyone changing these dependencies
 

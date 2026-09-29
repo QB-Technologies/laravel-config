@@ -5,11 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-09-23
+## [1.2.0] - 2026-09-29
 
 ### Added
 - `laravel/boost` as a normal dependency, so apps that require this package in `require-dev` install Boost automatically
 - Laravel Boost guideline at `resources/boost/guidelines/core.blade.php` so `php artisan boost:install` and `boost:update` publish QB coding rules into consuming apps
+
+### Upgrade notes
+- `laravel/boost` `^2.9` requires `illuminate/console|contracts|routing|support` at `^11.45.3|^12.41.1|^13.0`. Because Boost is a `require` dependency here, that floor now applies to every consumer: an app on Laravel below 11.45.3 or 12.41.1 cannot install this release without upgrading the framework first.
+- The shared rules are opt-in per developer. After bumping this package, run `php artisan boost:install` (or `php artisan boost:update`) **interactively** and select `qb-technologies/laravel-config` when Boost lists packages with guidelines. A Composer-triggered `boost:update` never adds a newly available package.
 
 ## [1.1.1] - 2026-07-31
 

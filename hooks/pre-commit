@@ -9,6 +9,14 @@ NC='\033[0m' # No Color
 # Exit when any command fails
 set -e
 
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${HOOK_DIR}/_lib" ]; then
+    . "${HOOK_DIR}/_lib"
+else
+    echo -e "${RED}❌ _lib not found!${NC}"
+    exit 1
+fi
+
 echo -e "${YELLOW}Running pre-commit hooks...${NC}"
 
 # Function to display error
@@ -17,17 +25,13 @@ display_error() {
     exit 1
 }
 
-# Function to check if command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
+hooks_load_composer_scripts
 
 # Run PHP CS Fixer
-if command_exists "./vendor/bin/php-cs-fixer"; then
+if hooks_vendor_bin_exists php-cs-fixer; then
     echo "🧹 Running PHP CS Fixer..."
-    ./vendor/bin/php-cs-fixer fix --dry-run --diff || display_error "PHP CS Fixer found issues"
+    hooks_run_check cs php-cs-fixer fix --dry-run --diff || display_error "PHP CS Fixer found issues"
 fi
 
 echo -e "${GREEN}✅ All pre-commit hooks passed!${NC}"
 exit 0
-

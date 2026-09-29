@@ -1,0 +1,134 @@
+#!/bin/bash
+
+# Shared helpers for qb-technologies/laravel-config git hooks.
+# Installed beside pre-commit and pre-push; sourced from there.
+
+if [ -f .hooks-env ]; then
+    . ./.hooks-env
+fi
+
+HOOKS_RUNTIME_WARNED=0
+
+hooks_warn_runtime_fallback() {
+    if [ "$HOOKS_RUNTIME_WARNED" = 0 ]; then
+        echo "⚠️  DEV_RUNTIME=${1} is not available here; using native php/composer." >&2
+        HOOKS_RUNTIME_WARNED=1
+    fi
+}
+
+# Normalise DEV_RUNTIME to: sail, herd, valet, or empty (native). Unknown values warn once.
+hooks_normalize_dev_runtime() {
+    case "${DEV_RUNTIME:-}" in
+        sail|SAIL) echo "sail" ;;
+        herd|HERD) echo "herd" ;;
+        valet|VALET) echo "valet" ;;
+        ""|native|NATIVE|system|SYSTEM|direct|DIRECT|none|NONE) echo "" ;;
+        *)
+            if [ "$HOOKS_RUNTIME_WARNED" = 0 ]; then
+                echo "⚠️  Unknown DEV_RUNTIME '${DEV_RUNTIME}'; using native php/composer." >&2
+                HOOKS_RUNTIME_WARNED=1
+            fi
+            echo ""
+            ;;
+    esac
+}
+
+# Use DEV_RUNTIME only when the tooling is actually present; otherwise native.
+hooks_effective_runtime() {
+    local requested
+    requested="$(hooks_normalize_dev_runtime)"
+
+    case "$requested" in
+        sail)
+            if [ -n "$(hooks_sail_bin)" ]; then
+                echo "sail"
+                return
+            fi
+            hooks_warn_runtime_fallback "sail"
+            ;;
+        herd|valet)
+            if command -v "$requested" >/dev/null 2>&1; then
+                echo "$requested"
+                return
+            fi
+            hooks_warn_runtime_fallback "$requested"
+            ;;
+    esac
+
+    echo ""
+}
+
+hooks_sail_bin() {
+    if [ -f "${PWD}/sail" ]; then
+        echo "${PWD}/sail"
+    elif [ -f "${PWD}/vendor/bin/sail" ]; then
+        echo "${PWD}/vendor/bin/sail"
+    else
+        echo ""
+    fi
+}
+
+hooks_run_artisan() {
+    case "$(hooks_effective_runtime)" in
+        sail) "$(hooks_sail_bin)" artisan "$@" ;;
+        herd|valet) "$(hooks_effective_runtime)" php artisan "$@" ;;
+        *) php artisan "$@" ;;
+    esac
+}
+
+hooks_run_composer() {
+    case "$(hooks_effective_runtime)" in
+        sail) COMPOSER_PROCESS_TIMEOUT=0 "$(hooks_sail_bin)" composer "$@" ;;
+        herd|valet) COMPOSER_PROCESS_TIMEOUT=0 "$(hooks_effective_runtime)" composer "$@" ;;
+        *) COMPOSER_PROCESS_TIMEOUT=0 composer "$@" ;;
+    esac
+}
+
+hooks_run_php() {
+    case "$(hooks_effective_runtime)" in
+        sail) "$(hooks_sail_bin)" php "$@" ;;
+        herd|valet) "$(hooks_effective_runtime)" php "$@" ;;
+        *) php "$@" ;;
+    esac
+}
+
+hooks_run_vendor_bin() {
+    local tool="$1"
+    shift
+
+    case "$(hooks_effective_runtime)" in
+        sail) "$(hooks_sail_bin)" php "vendor/bin/${tool}" "$@" ;;
+        herd|valet) "$(hooks_effective_runtime)" php "vendor/bin/${tool}" "$@" ;;
+        *) "vendor/bin/${tool}" "$@" ;;
+    esac
+}
+
+hooks_vendor_bin_exists() {
+    [ -x "./vendor/bin/$1" ]
+}
+
+hooks_load_composer_scripts() {
+    COMPOSER_SCRIPTS=""
+
+    if [ ! -f composer.json ]; then
+        return
+    fi
+
+    if [ -z "$(hooks_effective_runtime)" ] && ! command -v composer >/dev/null 2>&1; then
+        return
+    fi
+
+    COMPOSER_SCRIPTS=$(hooks_run_composer run-script --list 2>/dev/null | awk '{print $1}')
+}
+
+hooks_run_check() {
+    local script="$1"
+    local tool="$2"
+    shift 2
+
+    if printf '%s\n' "$COMPOSER_SCRIPTS" | grep -qx -- "$script"; then
+        hooks_run_composer "$script"
+    else
+        hooks_run_vendor_bin "$tool" "$@"
+    fi
+}

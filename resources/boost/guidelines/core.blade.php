@@ -8,7 +8,7 @@ Apply these rules to new and edited code. Do not rewrite existing violations whi
 - Do not commit, push, tag, or skip hooks (`--no-verify`) unless the user explicitly asks.
 - Do not commit `.env` or secrets.
 - Do not commit commented-out code unless the user explicitly asks to keep it.
-- Do not edit installed hook copies. Git keeps them outside the working tree in a worktree, so the path is not always `.git/hooks/`. Change hooks in `qb-technologies/laravel-config` and run `composer hooks:install`. Composer reinstalls them on every install and update.
+- Do not edit the installed hook copies. Change hooks in `qb-technologies/laravel-config` and run `composer hooks:install`. Composer reinstalls them on every install and update.
 
 ## PHP
 

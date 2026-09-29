@@ -9,15 +9,15 @@ NC='\033[0m' # No Color
 # Exit when any command fails
 set -e
 
-echo -e "${YELLOW}Running pre-push hooks...${NC}"
-
-# The app's own hook settings, if it keeps any. A project that runs its artisan
-# commands through a container sets ARTISAN there - see the README - and this is
-# the one place a consumer can override how the hook reaches artisan without
-# editing an installed hook that the next install overwrites.
-if [ -f .hooks-env.sh ]; then
-    . ./.hooks-env.sh
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${HOOK_DIR}/_lib" ]; then
+    . "${HOOK_DIR}/_lib"
+else
+    echo -e "${RED}❌ _lib not found!${NC}"
+    exit 1
 fi
+
+echo -e "${YELLOW}Running pre-push hooks...${NC}"
 
 # The files this push would send. A pre-push hook runs after the commit, so the
 # index already matches HEAD and `git diff --cached` comes back empty: every check
@@ -50,40 +50,7 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# The app's composer scripts, so a check can run exactly the way CI runs it.
-COMPOSER_SCRIPTS=""
-if command_exists composer && [ -f "composer.json" ]; then
-    COMPOSER_SCRIPTS=$(composer run-script --list 2>/dev/null | awk '{print $1}')
-fi
-
-# Prefer the app's composer script over calling the binary here, so the hook and
-# CI cannot drift apart on flags. Falls back to the direct call for apps that
-# define no script of that name.
-run_check() {
-    local script="$1"
-    shift
-
-    if printf '%s\n' "$COMPOSER_SCRIPTS" | grep -qx -- "$script"; then
-        # Composer applies its 300 second process-timeout to scripts, and a slow
-        # analysis on a large tree runs past it.
-        COMPOSER_PROCESS_TIMEOUT=0 composer "$script"
-    else
-        "$@"
-    fi
-}
-
-# Run an artisan command the way this project runs it. ARTISAN comes from
-# .hooks-env.sh as an array, e.g. ARTISAN=(./vendor/bin/sail artisan). Unset, the
-# hook calls artisan directly - the previous behaviour of preferring
-# ./vendor/bin/sail whenever it existed broke every project that had sail sitting
-# in vendor as a transitive dependency without using it.
-run_artisan() {
-    if [ "${#ARTISAN[@]}" -gt 0 ]; then
-        "${ARTISAN[@]}" "$@"
-    else
-        php artisan "$@"
-    fi
-}
+hooks_load_composer_scripts
 
 # Directory Structure Validation
 validate_directory_structure() {
@@ -154,32 +121,32 @@ fi
 echo "🔍 Checking PHP syntax..."
 for FILE in $PUSH_PHP_FILES; do
     if [ -f "$FILE" ]; then
-        php -l "$FILE" >/dev/null 2>&1 || display_error "PHP syntax error in $FILE"
+        hooks_run_php -l "$FILE" >/dev/null 2>&1 || display_error "PHP syntax error in $FILE"
     fi
 done
 
 # Run PHP CS Fixer
-if command_exists "./vendor/bin/php-cs-fixer"; then
+if hooks_vendor_bin_exists php-cs-fixer; then
     echo "🧹 Running PHP CS Fixer..."
-    run_check cs ./vendor/bin/php-cs-fixer fix --dry-run --diff || display_error "PHP CS Fixer found issues"
+    hooks_run_check cs php-cs-fixer fix --dry-run --diff || display_error "PHP CS Fixer found issues"
 fi
 
 # Run PHPStan/Larastan
-if command_exists "./vendor/bin/phpstan"; then
+if hooks_vendor_bin_exists phpstan; then
     echo "🔍 Running PHPStan..."
-    run_check phpstan ./vendor/bin/phpstan analyse --memory-limit=1024M || display_error "PHPStan found issues"
+    hooks_run_check phpstan phpstan analyse --memory-limit=1024M || display_error "PHPStan found issues"
 fi
 
 # Run Rector
-if command_exists "./vendor/bin/rector"; then
+if hooks_vendor_bin_exists rector; then
     echo "🔍 Running Rector..."
-    run_check rector ./vendor/bin/rector --dry-run || display_error "Rector found issues"
+    hooks_run_check rector rector --dry-run || display_error "Rector found issues"
 fi
 
 # Run PHPCPD (copy-paste detection)
-if command_exists "./vendor/bin/phpcpd"; then
+if hooks_vendor_bin_exists phpcpd; then
     echo "📋 Running PHPCPD..."
-    run_check phpcpd ./vendor/bin/phpcpd --min-lines 10 --min-tokens 70 --suffix .php domain/ || display_error "PHPCPD found duplicated code"
+    hooks_run_check phpcpd phpcpd --min-lines 10 --min-tokens 70 --suffix .php domain/ || display_error "PHPCPD found duplicated code"
 fi
 
 # Run ESLint for JavaScript
@@ -210,7 +177,7 @@ fi
 
 # Check migration status
 echo "📊 Checking migration status..."
-run_artisan migrate:status || display_error "Migration status check failed"
+hooks_run_artisan migrate:status || display_error "Migration status check failed"
 
 # Run all structural validations
 validate_directory_structure
@@ -219,4 +186,3 @@ check_unnecessary_files
 
 echo -e "${GREEN}✅ All pre-push hooks passed!${NC}"
 exit 0
-

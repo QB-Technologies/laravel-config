@@ -9,6 +9,14 @@ NC='\033[0m' # No Color
 # Exit when any command fails
 set -e
 
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${HOOK_DIR}/_lib" ]; then
+    . "${HOOK_DIR}/_lib"
+else
+    echo -e "${RED}❌ _lib not found!${NC}"
+    exit 1
+fi
+
 echo -e "${YELLOW}Running pre-commit hooks...${NC}"
 
 # Function to display error
@@ -17,39 +25,13 @@ display_error() {
     exit 1
 }
 
-# Function to check if command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-# The app's composer scripts, so a check can run exactly the way CI runs it.
-COMPOSER_SCRIPTS=""
-if command_exists composer && [ -f "composer.json" ]; then
-    COMPOSER_SCRIPTS=$(composer run-script --list 2>/dev/null | awk '{print $1}')
-fi
-
-# Prefer the app's composer script over calling the binary here, so the hook and
-# CI cannot drift apart on flags. Falls back to the direct call for apps that
-# define no script of that name.
-run_check() {
-    local script="$1"
-    shift
-
-    if printf '%s\n' "$COMPOSER_SCRIPTS" | grep -qx -- "$script"; then
-        # Composer applies its 300 second process-timeout to scripts, and a slow
-        # analysis on a large tree runs past it.
-        COMPOSER_PROCESS_TIMEOUT=0 composer "$script"
-    else
-        "$@"
-    fi
-}
+hooks_load_composer_scripts
 
 # Run PHP CS Fixer
-if command_exists "./vendor/bin/php-cs-fixer"; then
+if hooks_vendor_bin_exists php-cs-fixer; then
     echo "🧹 Running PHP CS Fixer..."
-    run_check cs ./vendor/bin/php-cs-fixer fix --dry-run --diff || display_error "PHP CS Fixer found issues"
+    hooks_run_check cs php-cs-fixer fix --dry-run --diff || display_error "PHP CS Fixer found issues"
 fi
 
 echo -e "${GREEN}✅ All pre-commit hooks passed!${NC}"
 exit 0
-

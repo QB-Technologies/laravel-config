@@ -39,7 +39,7 @@ class InstallHooks
             throw new \RuntimeException("Hooks directory not found in package at: {$hooksDir}");
         }
 
-        $hooks = ['pre-commit', 'pre-push'];
+        $hooks = ['_lib', 'pre-commit', 'pre-push'];
         $installed = 0;
 
         foreach ($hooks as $hook) {

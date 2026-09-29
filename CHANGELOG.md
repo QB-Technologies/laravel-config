@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2026-09-23
+## [2.0.0] - 2026-09-29
 
 ### Breaking
 - Consuming apps can no longer pick their own versions of the four code-quality tools. A root `composer.json` requirement is intersected with this package's constraint rather than overriding it, so a conflicting local declaration gives an unsolvable set and the only route to a different version is a release here.
-- Requiring Larastan puts an `illuminate/*` floor into every consumer's dependency graph. This package had no Laravel constraint at all before, and now has a say in which Laravel major a consuming app can resolve to.
+- Requiring Larastan and Laravel Boost puts an `illuminate/*` floor into every consumer's dependency graph. This package had no Laravel constraint at all before, and now has a say in which Laravel major a consuming app can resolve to. Boost sets the binding one: `illuminate/console|contracts|routing|support` at `^11.45.3|^12.41.1|^13.0`, so an app below Laravel 11.45.3 or 12.41.1 cannot install this release without upgrading the framework first.
 - `phpstan/phpstan ^1.10` is gone. PHPStan 2.x arrives transitively through Larastan instead, so a consumer still declaring PHPStan 1.x gets a resolver conflict rather than a message it can read.
 - Consuming apps must remove `vendor/larastan/larastan/extension.neon` from their own `.phpstan.neon`. The shared config includes it now, and PHPStan treats a file included twice as a hard error, so an app that keeps the line fails on the first run after upgrading.
 - The shared config no longer registers `Spatie\Ray\PHPStan\RemainingRayCallRule`. An app that wants the rule declares it itself and needs `spatie/laravel-ray` of its own.
@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The pre-push hook calls `php artisan` for its migration check unless the app sets `DEV_RUNTIME` in a `.hooks-env` at its root (for example `DEV_RUNTIME=sail`). An app that relied on the hook finding `./vendor/bin/sail` by itself has to add that file.
 
 ### Changed
+- `laravel/boost ^2.9` stays in `require`, where 1.2.0 put it, alongside the code-quality tools.
 - All four code-quality tools now ship from `require` instead of `require-dev`, so consuming apps get them transitively and no longer declare their own copies. `friendsofphp/php-cs-fixer ^3.75` and `rector/rector ^2.0` moved across, and `phpstan/phpstan ^1.10` was replaced by `larastan/larastan ^3.4`.
 - The pre-commit and pre-push hooks now run each check through the app's composer script when it defines one, falling back to the direct `vendor/bin` call when it does not. `cs`, `phpstan`, `rector`, and `phpcpd` are the names they look for. The hooks previously hardcoded their own flags while the apps kept the same flags in composer scripts, so the two could drift, and an app README telling developers to raise PHPStan's memory in the `phpstan` script was describing something the hook never read. Composer's process timeout is disabled for these calls so a slow analysis does not stop at 300 seconds with a Composer exception in place of the tool's output.
 - Git hooks install a shared `hooks/_lib` beside `pre-commit` and `pre-push`. Both hooks source it to load `.hooks-env` and honour `DEV_RUNTIME` (`native`, `herd`, `valet`, `sail`) the same way gitscripts does, falling back to host `php` / `composer` when it is unset or unavailable. Composer script discovery and direct `vendor/bin` fallbacks use that runtime too.
@@ -33,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The pre-push hook no longer runs `git add` on its way out. Staging files during a push is either a no-op or a surprise.
 - `install-hooks` prints git's own complaint when it cannot find a hooks directory, so a `safe.directory` refusal no longer looks the same as there being no repository. It also gives git `/dev/null` on stdin rather than inheriting the caller's, and normalises the paths it reports, so messages no longer carry a `../..` through them.
 - The package's own dependencies can be installed again. The old `phpstan/phpstan ^1.10` pin conflicted with `rector ^2.0` and `larastan ^3.x`, both of which need `phpstan ^2.x`, so `composer install` in a checkout of this package died on a resolver conflict. Requiring Larastan pulls a compatible PHPStan 2.x transitively and matches what the consuming apps actually run.
+
+## [1.2.0] - 2026-09-29
+
+### Added
+- `laravel/boost` as a normal dependency, so apps that require this package in `require-dev` install Boost automatically
+- Laravel Boost guideline at `resources/boost/guidelines/core.blade.php` so `php artisan boost:install` and `boost:update` publish QB coding rules into consuming apps
+
+### Upgrade notes
+- `laravel/boost` `^2.9` requires `illuminate/console|contracts|routing|support` at `^11.45.3|^12.41.1|^13.0`. Because Boost is a `require` dependency here, that floor now applies to every consumer: an app on Laravel below 11.45.3 or 12.41.1 cannot install this release without upgrading the framework first.
+- The shared rules are opt-in per developer. After bumping this package, run `php artisan boost:install` (or `php artisan boost:update`) **interactively** and select `qb-technologies/laravel-config` when Boost lists packages with guidelines. A Composer-triggered `boost:update` never adds a newly available package.
 
 ## [1.1.1] - 2026-07-31
 

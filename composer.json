@@ -27,6 +27,7 @@
         "php": "^8.3",
         "friendsofphp/php-cs-fixer": "^3.75",
         "larastan/larastan": "^3.4",
+        "laravel/boost": "^2.9",
         "rector/rector": "^2.0",
         "systemsdk/phpcpd": "^8.0"
     },

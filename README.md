@@ -27,12 +27,13 @@ The package requires PHP-CS-Fixer, PHPStan (via Larastan), Rector, and PHPCPD, s
 
 Apps can't override those versions locally. Composer intersects a root `composer.json` requirement with the dependency's constraint rather than letting the root win, so declaring a conflicting version in your app gives you an unsolvable set, not a local win. The only route to a different version is a release of this package.
 
-The four tools are pinned to exact versions, not ranges:
+The tools are pinned to exact versions, not ranges:
 
 | tool | version |
 | --- | --- |
 | `friendsofphp/php-cs-fixer` | 3.95.27 |
 | `larastan/larastan` | 3.12.2 |
+| `phpstan/phpstan` | 2.2.17 |
 | `rector/rector` | 2.6.7 |
 | `systemsdk/phpcpd` | 8.0.0 |
 
@@ -46,8 +47,9 @@ on Pest 3 gets PHPUnit 11, which requires `php-timer ^7.0.1`. Only one version o
 installed, so a newer PHPCPD makes this package uninstallable for any app testing with Pest 3.
 Raising it means waiting for those apps to reach PHPUnit 12.
 
-PHPStan is not pinned directly. It arrives through Larastan and Rector, which both require
-`^2.2.14`, so apps can still differ by a patch there.
+PHPStan is pinned here even though Larastan and Rector already bring it in, because they only ask
+for `^2.2.14`. That range allows PHPStan 2.3.5, and Rector 2.6.7 fails on the files it processes with
+that version. Move the PHPStan and Rector pins together, and run Rector on a real app before releasing.
 
 ### Laravel version support
 

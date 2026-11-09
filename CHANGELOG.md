@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-11-05
+
+### Fixed
+- `phpstan/phpstan` is now pinned to exactly 2.2.17. It arrived only through Larastan and Rector, which both allow `^2.2.14`, so `composer update` in a consuming app installed PHPStan 2.3.5. Rector 2.6.7 then reported `Could not process` on the files it processed, with a `CallableTypeNode::__construct()` type error from PHPStan's `ClosureType`, which fails any CI step that runs Rector. Apps that added their own PHPStan cap to get around this can remove it after upgrading.
+
 ## [2.0.0] - 2026-09-29
 
 ### Breaking
